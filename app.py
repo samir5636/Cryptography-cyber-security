@@ -1,94 +1,194 @@
-import base64
-import random
-from math import gcd
+import dash
+from dash import html, dcc
+from dash.dependencies import Input, Output, State
+from src.RSA import generate_keys, encrypt_message, decrypt_message
 
-# Étape 1: Génération des clés RSA
-def generate_keys(p, q):
-    n = p * q
-    phi_n = (p - 1) * (q - 1)
-    
-    # Générer un e cryptographiquement sûr
-    e = generate_random_e(phi_n)
-    
-    # Calcul de d avec l'algorithme d'Euclide étendu
-    d = extended_euclidean(e, phi_n)[1]
-    if d < 0:
-        d += phi_n
-    
-    return (e, n), (d, n)
+# Initialize Dash app
+app = dash.Dash(__name__)
 
-# Algorithme d'Euclide
-def euclidean(a, b):
-    while b != 0:
-        a, b = b, a % b
-    return a
+# Define the layout
+app.layout = html.Div(
+    style={
+        "backgroundColor": "#000",  # Black background
+        "color": "#00FF00",  # Neon green text
+        "fontFamily": "Courier New, monospace",  # Hacker-style font
+        "margin": "0",
+        "height": "100vh",  # Full viewport height
+        "display": "flex",
+        "flexDirection": "column",
+    },
+    children=[
+        html.H1(
+            "RSA Cryptosystem Dashboard",
+            style={"textAlign": "center", "color": "#00FF00", "margin": "20px 0"}
+        ),
+        html.Div(
+            style={
+                "display": "flex",
+                "flex": "1",
+                "justifyContent": "space-between",
+                "padding": "20px",
+                "gap": "20px",
+            },
+            children=[
+                html.Div(
+                    style={
+                        "flex": "1",
+                        "backgroundColor": "#0D0D0D",
+                        "padding": "15px",
+                        "border": "2px solid #00FF00",
+                        "display": "flex",
+                        "flexDirection": "column",
+                    },
+                    children=[
+                        html.H2("Step 1: Generate RSA Keys"),
+                        html.Label("Enter p (prime number):"),
+                        dcc.Input(id="input-p", type="number", value=257, style={"width": "100%", "marginBottom": "10px"}),
+                        html.Label("Enter q (prime number):"),
+                        dcc.Input(id="input-q", type="number", value=263, style={"width": "100%", "marginBottom": "10px"}),
+                        html.Button(
+                            "Generate Keys",
+                            id="generate-keys-button",
+                            style={
+                                "width": "100%",
+                                "backgroundColor": "#00FF00",
+                                "border": "none",
+                                "color": "#000",
+                                "padding": "10px",
+                                "cursor": "pointer",
+                            },
+                        ),
+                        html.Div(id="keys-output", style={"marginTop": "20px"})
+                    ],
+                ),
+                html.Div(
+                    style={
+                        "flex": "1",
+                        "backgroundColor": "#0D0D0D",
+                        "padding": "15px",
+                        "border": "2px solid #00FF00",
+                        "display": "flex",
+                        "flexDirection": "column",
+                    },
+                    children=[
+                        html.H2("Step 2: Encrypt a Message"),
+                        html.Label("Message to encrypt:"),
+                        dcc.Textarea(
+                            id="input-message",
+                            value="ziani\nsamir\n",
+                            style={"width": "100%", "height": "100px", "marginBottom": "10px"},
+                        ),
+                        html.Button(
+                            "Encrypt Message",
+                            id="encrypt-button",
+                            style={
+                                "width": "100%",
+                                "backgroundColor": "#00FF00",
+                                "border": "none",
+                                "color": "#000",
+                                "padding": "10px",
+                                "cursor": "pointer",
+                            },
+                        ),
+                        html.Div(id="encrypted-output", style={"marginTop": "20px"})
+                    ],
+                ),
+                html.Div(
+                    style={
+                        "flex": "1",
+                        "backgroundColor": "#0D0D0D",
+                        "padding": "15px",
+                        "border": "2px solid #00FF00",
+                        "display": "flex",
+                        "flexDirection": "column",
+                    },
+                    children=[
+                        html.H2("Step 3: Decrypt a Message"),
+                        html.Button(
+                            "Decrypt Message",
+                            id="decrypt-button",
+                            style={
+                                "width": "100%",
+                                "backgroundColor": "#00FF00",
+                                "border": "none",
+                                "color": "#000",
+                                "padding": "10px",
+                                "cursor": "pointer",
+                            },
+                        ),
+                        html.Div(id="decrypted-output", style={"marginTop": "20px"})
+                    ],
+                ),
+            ],
+        ),
+        html.Footer(
+            style={
+                "textAlign": "center",
+                "padding": "10px 0",
+                "color": "#00FF00",
+                "fontSize": "14px",
+                "borderTop": "1px solid #00FF00",
+            },
+            children=[
+                html.Span("Developed by Samir Ziani - Hacker Style 🚀"),
+                html.A(
+                    " GitHub ",
+                    href="https://github.com/samir-ziani",  # Replace with your GitHub URL
+                    style={"color": "#00FF00", "textDecoration": "none"},
+                    target="_blank",
+                ),
+            ],
+        ),
+    ],
+)
 
-# Algorithme d'Euclide étendu
-def extended_euclidean(a, b):
-    if b == 0:
-        return a, 1, 0
-    gcd, x1, y1 = extended_euclidean(b, a % b)
-    x = y1
-    y = x1 - (a // b) * y1
-    return gcd, x, y
+# Callbacks for interactivity
+@app.callback(
+    Output("keys-output", "children"),
+    Input("generate-keys-button", "n_clicks"),
+    State("input-p", "value"),
+    State("input-q", "value"),
+)
+def generate_keys_callback(n_clicks, p, q):
+    if not n_clicks:
+        return ""
+    public_key, private_key = generate_keys(p, q)
+    return html.Div([
+        html.P(f"Public Key: {public_key}"),
+        html.P(f"Private Key: {private_key}")
+    ])
 
-# Exponentiation rapide
-def fast_exp(base, exp, mod):
-    result = 1
-    while exp > 0:
-        if exp % 2 == 1:
-            result = (result * base) % mod
-        base = (base * base) % mod
-        exp //= 2
-    return result
 
-# Générer un e aléatoire
-def generate_random_e(phi_n, min_value=3):
-    while True:
-        e = random.randint(min_value, phi_n - 1)
-        if gcd(e, phi_n) == 1:
-            return e
+@app.callback(
+    Output("encrypted-output", "children"),
+    Input("encrypt-button", "n_clicks"),
+    State("input-p", "value"),
+    State("input-q", "value"),
+    State("input-message", "value"),
+)
+def encrypt_message_callback(n_clicks, p, q, message):
+    if not n_clicks:
+        return ""
+    public_key, _ = generate_keys(p, q)
+    encrypted_message = encrypt_message(message, public_key)
+    return html.P(f"Encrypted Message (Base64): {encrypted_message}")
 
-# Chiffrement d'un message
-def encrypt_message(message, public_key):
-    e, n = public_key
-    # Conversion ASCII
-    ascii_values = [ord(char) for char in message]
-    # Chiffrement des blocs
-    encrypted_blocks = [fast_exp(val, e, n) for val in ascii_values]
-    # Conversion en Base64
-    encrypted_bytes = ",".join(map(str, encrypted_blocks)).encode()
-    encrypted_base64 = base64.b64encode(encrypted_bytes).decode()
-    return encrypted_base64
 
-# Déchiffrement d'un message
-def decrypt_message(encrypted_base64, private_key):
-    d, n = private_key
-    # Décodage Base64
-    encrypted_bytes = base64.b64decode(encrypted_base64).decode()
-    encrypted_blocks = list(map(int, encrypted_bytes.split(",")))
-    # Déchiffrement des blocs
-    decrypted_ascii = [fast_exp(block, d, n) for block in encrypted_blocks]
-    # Conversion en texte
-    decrypted_message = "".join(chr(val) for val in decrypted_ascii)
-    return decrypted_message
+@app.callback(
+    Output("decrypted-output", "children"),
+    Input("decrypt-button", "n_clicks"),
+    State("input-p", "value"),
+    State("input-q", "value"),
+    State("input-message", "value"),
+)
+def decrypt_message_callback(n_clicks, p, q, message):
+    if not n_clicks:
+        return ""
+    public_key, private_key = generate_keys(p, q)
+    encrypted_message = encrypt_message(message, public_key)
+    decrypted_message = decrypt_message(encrypted_message, private_key)
+    return html.P(f"Decrypted Message: {decrypted_message}")
 
-# Étape 2: Données initiales
-p = 257
-q = 263
-message = "ziani\nsamir\n"
 
-# Génération des clés
-public_key, private_key = generate_keys(p, q)
-
-# Affichage des clés
-print("Clé publique :", public_key)
-print("Clé privée :", private_key)
-
-# Chiffrement
-encrypted_message = encrypt_message(message, public_key)
-print("Message chiffré (Base64) :", encrypted_message)
-
-# Déchiffrement
-decrypted_message = decrypt_message(encrypted_message, private_key)
-print("Message déchiffré :", decrypted_message)
+if __name__ == "__main__":
+    app.run_server(debug=True)
