@@ -1,0 +1,5 @@
+# Pour voir le contenu du certificat
+openssl x509 -in certificat.pem -text -noout
+
+# Pour vérifier la clé privée
+openssl rsa -in cle_privee.pem -check -noout
