@@ -1,11 +1,6 @@
 import base64
 import random
 from math import gcd
-import base64
-import random
-from math import gcd, isqrt
-from hashlib import sha256
-import subprocess
 
 # Étape 1: Génération des clés RSA
 def generate_keys(p, q):
@@ -77,58 +72,3 @@ def decrypt_message(encrypted_base64, private_key):
     # Conversion en texte
     decrypted_message = "".join(chr(val) for val in decrypted_ascii)
     return decrypted_message
-
-
-# Step 1: Digital Signature (Sign and Verify)
-def sign_message(message, private_key):
-    """Sign a message using the private key."""
-    d, n = private_key
-    # Hash the message
-    message_hash = int(sha256(message.encode()).hexdigest(), 16)
-    # Sign the hash with the private key
-    signature = fast_exp(message_hash, d, n)
-    return signature
-
-def verify_signature(message, signature, public_key):
-    """Verify a signature using the public key."""
-    e, n = public_key
-    # Hash the original message
-    message_hash = int(sha256(message.encode()).hexdigest(), 16)
-    # Decrypt the signature with the public key
-    decrypted_hash = fast_exp(signature, e, n)
-    # Compare the decrypted hash with the original message hash
-    return decrypted_hash == message_hash
-
-# Step 2: Generate an X.509 Certificate
-def generate_certificate(common_name, private_key, public_key):
-    """
-    Generate an X.509 certificate using OpenSSL.
-    """
-    private_key_file = "private_key.pem"
-    public_key_file = "public_key.pem"
-    cert_file = "certificate.crt"
-
-    # Save private and public keys to files
-    with open(private_key_file, "w") as f:
-        f.write(f"-----BEGIN PRIVATE KEY-----\n{private_key}\n-----END PRIVATE KEY-----")
-    with open(public_key_file, "w") as f:
-        f.write(f"-----BEGIN PUBLIC KEY-----\n{public_key}\n-----END PUBLIC KEY-----")
-
-    # Generate a self-signed certificate using OpenSSL
-    cmd = [
-        "openssl",
-        "req",
-        "-new",
-        "-x509",
-        "-key", private_key_file,
-        "-out", cert_file,
-        "-days", "365",
-        "-subj", f"/CN={common_name}",
-    ]
-    subprocess.run(cmd, check=True)
-
-    # Read and return the certificate
-    with open(cert_file, "r") as f:
-        certificate = f.read()
-
-    return certificate
