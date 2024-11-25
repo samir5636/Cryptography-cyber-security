@@ -98,11 +98,11 @@ Here are some exciting improvements planned for the project:
 
 ### 🔐 RSA Interface  
 *Easily encrypt, decrypt, and sign messages using the RSA algorithm.*  
-![RSA Interface](./assets/rsa_interface.png)
+![RSA Interface](https://github.com/samir5636/Cryptography-cyber-security/blob/main/img/RSA.png)
 
 ### 🔑 ElGamal Interface  
 *Securely perform ElGamal operations for sensitive messages.*  
-![ElGamal Interface](./assets/elgamal_interface.png)
+![ElGamal Interface](https://github.com/samir5636/Cryptography-cyber-security/blob/main/img/ELGamal.png)
 
 ---
 
